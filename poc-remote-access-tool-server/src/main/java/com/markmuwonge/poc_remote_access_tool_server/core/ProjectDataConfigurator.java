@@ -32,9 +32,14 @@ public class ProjectDataConfigurator {
 				throw new Exception("Config file not found");
 			}
 			JSONObject config = new JSONObject(Files.readString(file.toPath()));
+			
 			int tcpServerPort = config.getJSONObject("tcp_server").getInt("port");
 			SocketUtils.findAvailableTcpPort(tcpServerPort, tcpServerPort); //throws exception
 			projectData.setTCPServerPort(tcpServerPort);
+			
+			int webServerPort = config.getJSONObject("web_server").getInt("port");
+			SocketUtils.findAvailableTcpPort(webServerPort, webServerPort); //throws exception
+			projectData.setWebServerPort(webServerPort);
 		}catch(Exception e) {
 			logger.error("*An error occurred setting project data bean: {}", e.toString());
 			System.exit(SpringApplication.exit(appContext, () -> 1));
