@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -45,12 +46,16 @@ public class WebSocketHandler extends TextWebSocketHandler implements PropertyCh
 
 	public void handleTextMessage(WebSocketSession webSocketSession, TextMessage textMessage)
 			throws InterruptedException, IOException {
-		String receivedMessage = textMessage.getPayload();
+		String receivedMessage = textMessage.getPayload().toUpperCase();
+		
 		logger.info("Received {} from {}", receivedMessage, webSocketSession.getRemoteAddress());
 
 		String response = "";
 		if (receivedMessage.equals("TCP_SERVER_STATUS")) {
-			response = receivedMessage + ":" + tcpServer.getTCPServerStatus().toString();
+			response = new JSONObject()
+					.put("type", receivedMessage)
+					.put("value", tcpServer.getTCPServerStatus())
+					.toString();
 		} else if (receivedMessage.equals("START_TCP_SERVER")) {
 			tcpServer.start();
 			return;
@@ -58,8 +63,12 @@ public class WebSocketHandler extends TextWebSocketHandler implements PropertyCh
 			tcpServer.stop();
 			return;
 		} else if (receivedMessage.equals("TCP_SERVER_CONNECTIONS")) {
-			response = receivedMessage + ":" + tcpServer.getTCPServerConnections().toString();
-		}else {
+			response = new JSONObject()
+					.put("type", receivedMessage)
+					.put("value", tcpServer.getTCPServerConnections())
+					.toString();
+		}
+		else {
 			return;
 		}
 
@@ -72,7 +81,11 @@ public class WebSocketHandler extends TextWebSocketHandler implements PropertyCh
 				TCPServerStatus newTCPServerStatus = (TCPServerStatus) propertyChangeEvent.getNewValue();
 				try {
 					clientWebSocketSession.sendMessage(new TextMessage(
-							propertyChangeEvent.getPropertyName() + ":" + newTCPServerStatus.toString()));
+							new JSONObject()
+							.put("type", propertyChangeEvent.getPropertyName())
+							.put("value", newTCPServerStatus)
+							.toString()
+					));
 				} catch (Exception e) {
 					logger.error("-An exception occurred handling property change '{}': {}",
 							propertyChangeEvent.getPropertyName(), e.toString());
@@ -82,11 +95,15 @@ public class WebSocketHandler extends TextWebSocketHandler implements PropertyCh
 			clientWebSocketSessions.forEach(clientWebSocketSession -> {
 				try {
 					clientWebSocketSession.sendMessage(new TextMessage(
-							propertyChangeEvent.getPropertyName() + ":" + tcpServer.getTCPServerConnections()));
-				} catch (Exception e) {
+							new JSONObject()
+							.put("type", propertyChangeEvent.getPropertyName())
+							.put("value", tcpServer.getTCPServerConnections())
+							.toString()
+					));
+				} catch (Exception e) { 
 					logger.error("-An exception occurred handling tcp server connection property change '{}': {}",
 							propertyChangeEvent.getPropertyName(), e.toString());
-				}
+				} 
 			});
 		}
 	}

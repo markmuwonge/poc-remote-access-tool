@@ -17,12 +17,12 @@ public class EndpointSecurityConfigurator extends WebSecurityConfigurerAdapter {
 
 	@Override
 	public void configure(HttpSecurity http) throws Exception {
-//		http		
-//		.cors()
-//		.and()
-//		.authorizeRequests()
-//		.antMatchers("/**")	
-//		.permitAll();
+		http		
+		.cors()
+		.and()
+		.authorizeRequests()
+		.antMatchers("/**")	
+		.permitAll();
 	}
 
 	@Bean

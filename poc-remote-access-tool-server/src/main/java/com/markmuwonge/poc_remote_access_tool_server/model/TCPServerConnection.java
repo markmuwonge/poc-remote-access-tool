@@ -30,7 +30,7 @@ public class TCPServerConnection {
 		this.connection = connection;
 		this.initEpochSecond = initEpochSecond;
 		this.initPingPongValue = initPingPongValue;
-	}
+	} 
 
 	@PostConstruct
 	private void postConstruct() {
@@ -63,5 +63,5 @@ public class TCPServerConnection {
 			logger.info("Disconnecting connection {}", connection.address());
 			connection.dispose();
 		}
-	}
+	} 
 }

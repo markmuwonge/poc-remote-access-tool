@@ -37,6 +37,9 @@ public class ProjectDataConfigurator {
 			SocketUtils.findAvailableTcpPort(tcpServerPort, tcpServerPort); //throws exception
 			projectData.setTCPServerPort(tcpServerPort);
 			
+			int tcpServerNoPongReceivedMaxSeconds = config.getJSONObject("tcp_server").getInt("no_pong_received_max_seconds");
+			projectData.setTCPServerNoPongReceivedMaxSeconds(tcpServerNoPongReceivedMaxSeconds);
+			
 			int webServerPort = config.getJSONObject("web_server").getInt("port");
 			SocketUtils.findAvailableTcpPort(webServerPort, webServerPort); //throws exception
 			projectData.setWebServerPort(webServerPort);

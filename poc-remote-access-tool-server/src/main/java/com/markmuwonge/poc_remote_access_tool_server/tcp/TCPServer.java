@@ -2,6 +2,7 @@ package com.markmuwonge.poc_remote_access_tool_server.tcp;
 import java.beans.PropertyChangeSupport;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -49,7 +50,7 @@ public class TCPServer {
 	private reactor.netty.tcp.TcpServer tcpServer;
 	private DisposableServer disposableServer;
 	private List<TCPServerConnection> tcpServerConnections;
-	private final int noPongReceivedMaxSeconds = 60;
+	private int noPongReceivedMaxSeconds;
 	
 	@Autowired private Logger logger;
 	@Autowired private WebSocketHandler webSocketHandler;
@@ -68,6 +69,7 @@ public class TCPServer {
 		logger.info("Starting TCP Server");
 		propertyChangeSupport = new PropertyChangeSupport(this);
 		propertyChangeSupport.addPropertyChangeListener(webSocketHandler);
+		noPongReceivedMaxSeconds = projectData.getTCPServerNoPongReceivedMaxSeconds();
 	}
 	
 	public void start() {
@@ -111,7 +113,7 @@ public class TCPServer {
 					logger.info(
 						"Connection from {} has disconnected",
 						connection.address()
-					);
+					); 
 					TCPServerConnection tcpServerConnection = tcpServerConnections.stream()
 					.filter(tsc -> tsc.getConnection() == connection )
 					.findFirst().orElse(null);
@@ -135,28 +137,19 @@ public class TCPServer {
 	public void stop() {
 		if (tcpServerStatus == TCPServerStatus.STOPPED) return;
 		
+		new ArrayList<TCPServerConnection>(tcpServerConnections).stream().forEach(tcpServerConnection -> {
+			disconnect(tcpServerConnection);
+		});
+		
 		disposableServer.dispose();
 		
 		tcpServerStatus = TCPServerStatus.STOPPED;
-		
-		tcpServerConnections.stream().forEach(tcpServerConnection -> {
-			disconnect(tcpServerConnection);
-		});
-		List<TCPServerConnection> oldTCPServerConnections = new ArrayList<TCPServerConnection>(
-				tcpServerConnections
-		);
-		tcpServerConnections.clear();
-		
 		propertyChangeSupport.firePropertyChange(
 				"tcp_server_status",
 				TCPServerStatus.STARTED,
 				tcpServerStatus
 		);
-		propertyChangeSupport.firePropertyChange(
-				"tcp_server_connections",
-				oldTCPServerConnections,
-				tcpServerConnections
-			);
+		
 		logger.info("TCP Server stopped");
 	}
 	
@@ -267,14 +260,13 @@ public class TCPServer {
 		};
 	}
 	
-	
-	
 	public TCPServerStatus getTCPServerStatus() {
 		return tcpServerStatus; 
 	}
 	
 	public List<JSONObject> getTCPServerConnections() {
-		return tcpServerConnections.stream().map(tcpServerConnection -> {
+		return tcpServerConnections.stream()
+			   .map(tcpServerConnection -> {
 			return new JSONObject()
 					.put(
 							"ip_address",
@@ -285,6 +277,10 @@ public class TCPServer {
 							tcpServerConnection.getConnection().address().getPort()
 					);
 		}).collect(Collectors.toList());
+	}
+	
+	public List<String> getTCPConnectionFields(){
+		return Arrays.asList("ip_address", "port");
 	}
 	
 	@PreDestroy
